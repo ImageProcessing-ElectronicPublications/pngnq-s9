@@ -1,3 +1,10 @@
+September 2016:
+	pngnq-s9-2.0.2: -P altered to maintain order of supplied palette colours
+	in output image.  Fixed bug YUV colorimportance bug.  Fixed erroneous
+	writing of directory separator for directory supplied by -d option.
+	Removed freegetopt and some other vestigial files that were complicating
+	compilation.
+
 September 19, 2012:  
     pngnq-s9-2.0.1: Two small changes to allow compilation on Cygwin:
     src/Makefile.am changed so it no longer links to a specific version of

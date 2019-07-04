@@ -372,25 +372,6 @@ static inline nq_colour_vector calc_context_weighting(nq_colour_vector target_pi
     context_weighting = init_vec(colour_importance, colour_importance,
         colour_importance, full);
 
-    const float low = 1.0 / 32.0;
-    const float high = 1.0 - low;
-
-    if(colour_space == YUV) {
-        float uv_importance;
-        float low_point = low*sensitivity.elems[yy]*MAX255;
-        float high_point = high*sensitivity.elems[yy]*MAX255;
-        float max_point = sensitivity.elems[yy]*MAX255;
-        if(target_pix.elems[yy] < low_point) {
-            uv_importance = ABS(target_pix.elems[yy] / low_point);
-        } else if(target_pix.elems[yy] > high_point) {
-            uv_importance = ABS((max_point - target_pix.elems[yy]) / low_point);
-        } else {
-            uv_importance = full;
-        }
-
-        context_weighting = vec_mul(context_weighting, init_vec(full, uv_importance, uv_importance, full));
-    }
-
     return context_weighting;
 }
 
@@ -760,7 +741,7 @@ nq_colour_vector internaliseLearningPixel(int r_in, int g_in, int b_in, int al_i
 
 /* round_clamp(x) rounds x to an integer value and then clamps it in the range [MINZERO, MAX255]. 
  */
-inline float round_clamp(float x) {
+static inline float round_clamp(float x) {
     x = round(x);
     if(x < MINZERO) {
         return MINZERO;
@@ -883,15 +864,17 @@ nq_colour_vector externalise(nq_colour_vector internal_pix) {
 
 
 
-/* getcolormap(map, strict_pal_rgba) writes the colour palette selected by our neural network into the block of memory pointed
+/* getcolormap(map) writes the colour palette selected by our neural network into the block of memory pointed
  * at by map, and externalises and re-internalises neuron values using new sensitivity settings for the remapping phase calls
  * to inxsearch().  The colours are written in RGBA format, with one unsigned byte for each component, each in the range
- * [0,255].  If strict_pal_rgba is true, then if any of the selected colours were provided by the user as a locked palette, the
- * RGBA bytes for those colours will be copied directly from the source, instead of the network, where certain settings may
- * have altered them.  The caller is responsible for allocating and freeing map, which must be at least 4*netsize bytes in
- * size.
+ * [0,255].  
+ * 
+ * The second version of the function observes the -P strict_pal_rgba command: if any of the selected colours were provided by
+ * the user as a locked palette, the RGBA bytes for those colours will be copied directly from the source, instead of the
+ * network, where certain settings may have altered them.  The caller is responsible for allocating and freeing map, which must
+ * be at least 4*netsize bytes in size.
  */
-void getcolormap(unsigned char *map, int strict_pal_rgba) {
+void getcolormap(unsigned char *map) {
 
     unsigned int j;
     nq_colour_vector externalised[netsize];
@@ -900,22 +883,10 @@ void getcolormap(unsigned char *map, int strict_pal_rgba) {
     for(j = 0; j < netsize; j++) {
         nq_colour_vector intermediate = externalise(network[j]);
         externalised[j] = intermediate;
-        if(!strict_pal_rgba || !neuronlock[j]) { 
-            /* This is the normal case, taking the map value from the network.*/
-            *map++ = intermediate.elems[red];
-            *map++ = intermediate.elems[green];
-            *map++ = intermediate.elems[blue];
-            *map++ = intermediate.elems[alpha];
-
-        } else {
-            /* However, if we are strictly retaining palette file rgb values, and neuron j is a locked palette neuron, then we
-             * directly copy the original rgba values rather using the neuron's values. */
-
-            *map++ = *(neuronlock[j]); /* neuronlock points at the...*/
-            *map++ = *(neuronlock[j]+1); /*...palette file pixel data. */ 
-            *map++ = *(neuronlock[j]+2);
-            *map++ = *(neuronlock[j]+3);
-        }
+        *map++ = intermediate.elems[red];
+        *map++ = intermediate.elems[green];
+        *map++ = intermediate.elems[blue];
+        *map++ = intermediate.elems[alpha];
 
     }
 
@@ -933,7 +904,65 @@ void getcolormap(unsigned char *map, int strict_pal_rgba) {
         
 }
 
+void getcolormap_strict(unsigned char *map, unsigned char *user_palette_data, int user_palette_size) {
 
+    unsigned int j;
+    nq_colour_vector externalised[netsize];
+    
+
+    /* First, just copy over the user-supplied colours. */
+    for(j = 0; j < user_palette_size; j++) {
+        externalised[j] = init_vec(
+                user_palette_data[(4*j)], 
+                user_palette_data[(4*j)+1],
+                user_palette_data[(4*j)+2],
+                user_palette_data[(4*j)+3]);
+
+        *map++ = user_palette_data[(4*j)]; 
+        *map++ = user_palette_data[(4*j)+1]; 
+        *map++ = user_palette_data[(4*j)+2]; 
+        *map++ = user_palette_data[(4*j)+3]; 
+
+    }
+
+    /* Now scan through and tack each unlocked colour on the end. */
+    int next_pos = user_palette_size;
+    for(j = 0; j < netsize; j++) {
+        if(!neuronlock[j]) { 
+            nq_colour_vector intermediate = externalise(network[j]);
+            externalised[next_pos] = intermediate;
+            *map++ = intermediate.elems[red];
+            *map++ = intermediate.elems[green];
+            *map++ = intermediate.elems[blue];
+            *map++ = intermediate.elems[alpha];
+            next_pos++;
+
+            /* Panic if our logic is unsound. */    
+            if(next_pos > netsize) {
+                programming_error("  Internal logic error: miscalculated number of user-supplied and learnt colours.");
+                break;
+            }
+        }
+    }
+
+    /* Complain if our logic is unsound. */    
+    if(next_pos != netsize) {
+        programming_error("  Internal logic error: undershot on the number of learnt colours.");
+    }
+
+    /* Recalibrate sensitivity, and re-internalise every network node. */
+    sensitivity = remap_sensitivity;
+    reciprocal_sensitivity.elems[zero] = (float) (1.0/remap_sensitivity.elems[zero]);
+    reciprocal_sensitivity.elems[one] = (float) (1.0/remap_sensitivity.elems[one]);
+    reciprocal_sensitivity.elems[two] = (float) (1.0/remap_sensitivity.elems[two]);
+    reciprocal_sensitivity.elems[alpha] = (float) (1.0/remap_sensitivity.elems[alpha]);
+
+    for(j = 0; j < netsize; j++) {
+        network[j] = internaliseLearningPixel(externalised[j].elems[red], externalised[j].elems[green],
+                                              externalised[j].elems[blue], externalised[j].elems[alpha]);
+    }
+        
+}
 
 
 /* netsort(currnetsize) sorts network, assuming it contains valid neurons  from 0 to currnetsize-1.  This is a simple insertion
@@ -1225,7 +1254,7 @@ int contest(nq_colour_vector target_pix)
  * 
  * XXX Posneg could be turned into a vector function in various ways.
  */
-inline double posneg(double x) {
+static inline double posneg(double x) {
     if(x < 0) {
         return -1.0;
     } else {

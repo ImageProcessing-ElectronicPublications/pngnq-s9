@@ -1,6 +1,6 @@
 # Autoconf for pngnq-s9
 
-AC_INIT([pngnq-s9],[2.0.1], [apr-apr-apr@sourceforge.net])
+AC_INIT([pngnq-s9],[2.0.2], [apr-apr-apr@sourceforge.net])
 AM_INIT_AUTOMAKE[-Wall -Werror]
 AC_COPYRIGHT([Copyright 1994-2012, Coyle, Dekker, Lesiński, Pellas-Rice, Roelf et al])
 
@@ -13,7 +13,7 @@ AC_CHECK_HEADERS([sys/stat.h])
 AC_CHECK_HEADERS([sys/time.h]) 
 AC_CHECK_HEADERS([valgrind/callgrind.h])
 AC_CHECK_HEADERS([fcntl.h])
-AC_CHECK_HEADERS([unistd.h])
+AC_CHECK_HEADERS([getopt.h])
 AC_CHECK_HEADERS([stdlib.h])
                    
 # checks for compiler characteristics
@@ -40,5 +40,5 @@ AC_CHECK_FUNCS([strrchr])
 
 AC_CONFIG_HEADERS([src/config.h]) 
 AM_CONDITIONAL([USE_FREEGETOPT],[ test $ac_cv_func_getopt = "no" ])
-AC_CONFIG_FILES([Makefile src/Makefile freegetopt/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile])
 AC_OUTPUT

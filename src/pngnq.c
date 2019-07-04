@@ -123,23 +123,17 @@
  */
 
 
-#define PNGNQ_VERSION VERSION
+#define PNGNQ_VERSION "2.0.2"
 
 #define FNMAX 1024
 
-#include "config.h"
 #include "pngnqhelp.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h> /* isprint() and features.h */
-
-#if HAVE_GETOPT
-#  include <unistd.h>
-#else
-#  include "../freegetopt/getopt.h"
-#endif
+#include <getopt.h>
 
 #if HAVE_VALGRIND_H
 # include <valgrind.h>
@@ -594,6 +588,7 @@ int main(int argc, char** argv)
     while(optind<=argc) {
 
         PNGNQ_MESSAGE("  quantizing: %s \n",input_file_name);
+        PNGNQ_MESSAGE("  output directory: %s \n",output_directory);
         
         retval = pngnq(
            input_file_name, input_palette_name, output_file_extension, output_directory,
@@ -661,13 +656,14 @@ char *createoutname(char *infilename, char* newext, char *newdir){
             fn_len = strlen(infilename);
         }
          
-        /* add a separator to newdir if needed */
-        if(newdir && newdir[dir_len-1] != DIR_SEPARATOR_CHAR){
-            strncpy(newdir+dir_len,DIR_SEPARATOR_STR,1);
-            dir_len++;
-        }
         /* copy new directory name to output */
         strncpy(outname,newdir,dir_len);
+
+        /* add a separator to newdir if needed */
+        if(newdir[dir_len-1] != DIR_SEPARATOR_CHAR){
+            *(outname + dir_len) = DIR_SEPARATOR_CHAR;
+            dir_len++;
+        }
     }
 
     if (fn_len > FNMAX-ext_len-dir_len) {
@@ -1199,41 +1195,53 @@ static int pngnq(
             exclusion_threshold, use_alpha_importance_heuristic);
     }
     learn(sample_factor, unisolate, verbose);
-    getcolormap((unsigned char*)map, strict_pal_rgba);
-
-    /* Remap indexes so all tRNS chunks are together */
-    PNGNQ_MESSAGE("  Remapping colormap to eliminate opaque tRNS-chunk entries...\n");
-
-    for (top_idx = newcolors-1, bot_idx = x = 0;  x < newcolors;  ++x) {
-        if (map[x][3] == 255) { /* maxval */
-          remap[x] = top_idx--;
-        } else {
-          remap[x] = bot_idx++;
-        }
+    if(strict_pal_rgba) {
+        getcolormap_strict((unsigned char*) map, (unsigned char*) rwpngpal_info.rgba_data, inpal_colours);
+    } else {
+        getcolormap((unsigned char*)map);
     }
 
-    PNGNQ_MESSAGE( "%d entr%s left\n", bot_idx,(bot_idx == 1)? "y" : "ies");
+    /* Remap indexes so all tRNS chunks are together, unless strict_pal_rgba is on. */
+    if(!strict_pal_rgba) {
+        PNGNQ_MESSAGE("  Remapping colormap to eliminate opaque tRNS-chunk entries...\n");
+
+        for (top_idx = newcolors-1, bot_idx = x = 0;  x < newcolors;  ++x) {
+            if (map[x][3] == 255) { /* maxval */
+              remap[x] = top_idx--;
+            } else {
+              remap[x] = bot_idx++;
+            }
+        }
+
+        rwpng_info.num_trans = bot_idx;
+        PNGNQ_MESSAGE( "%d entr%s left\n", bot_idx,(bot_idx == 1)? "y" : "ies");
 
 
-    /* sanity check:  top and bottom indices should have just crossed paths */
-    if (bot_idx != top_idx + 1) {
-        PNGNQ_WARNING("  Internal logic error: remapped bot_idx = %d, top_idx = %d\n",bot_idx, top_idx);
-        if (rwpng_info.row_pointers) {
-            free(rwpng_info.row_pointers);
+        /* sanity check:  top and bottom indices should have just crossed paths */
+        if (bot_idx != top_idx + 1) {
+            PNGNQ_WARNING("  Internal logic error: remapped bot_idx = %d, top_idx = %d\n",bot_idx, top_idx);
+            if (rwpng_info.row_pointers) {
+                free(rwpng_info.row_pointers);
+            }
+            if (rwpng_info.rgba_data) {
+                free(rwpng_info.rgba_data);
+            }
+            if (!using_stdin) {
+                fclose(outfile);
+            }
+            return PALETTE_TRNS_SORT_ERROR;
         }
-        if (rwpng_info.rgba_data) {
-            free(rwpng_info.rgba_data);
+    } else {
+        /* Make the remap do nothing when strict_pal_rgba is on */
+        for(x = 0; x < newcolors; ++x) {
+            remap[x] = x;
         }
-        if (!using_stdin) {
-            fclose(outfile);
-        }
-        return PALETTE_TRNS_SORT_ERROR;
+        rwpng_info.num_trans = newcolors;
     }
 
     /* Fill in the palette info in the pngrw structure. */
     rwpng_info.sample_depth = 8;
     rwpng_info.num_palette = newcolors;
-    rwpng_info.num_trans = bot_idx;
 
     /* GRR TO DO:  if bot_idx == 0, check whether all RGB samples are gray
      and if so, whether grayscale sample_depth would be same

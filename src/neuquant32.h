@@ -154,7 +154,8 @@ static inline float biasvalue(unsigned int temp);
 
 /* Output colour map and prepare network colous for remapping
    ----------------- */
-void getcolormap(unsigned char *map, int strict_pal_rgba);
+void getcolormap(unsigned char *map);
+void getcolormap_strict(unsigned char *map, unsigned char *user_palette_data, int user_palette_size);
 
 /* Search for ABGR values 0..255 (after net is unbiased) and return colour index
    ---------------------------------------------------------------------------- */

@@ -1,11 +1,10 @@
 PNGNQ-S9 - PNG NEUQUANT WITH SAIKI 9 MODIFICATIONS
-VERSION 2.0
+VERSION 2.0.2
 
 NOTES:
 
 pngnq-s9 is derived from pngnq, and incorporates various changes and feature
-additions made by Adrian Pellas-Rice.  It is a separately maintained project,
-please direct all enquiries specific to pngnq-s9 to XXX only.
+additions made by Adrian Pellas-Rice.  It is a separately maintained project.
 
 pngnq is a tool for quantizing PNG images in RGBA format.  Pngnq is an
 adaptation by Stuart Coyle and later Kornel Lesiński of Greg Roelf's pnqquant
@@ -37,6 +36,15 @@ Saiki 9 Preface:
     options and involved a 75% rewrite of neuquant32.c.  These changes are
     summarised in pngnq-s9.odt.
 
+    Version 2.0.2 includes the following changes:
+    - The -P option will retain the supplied palette colours in the ordinal
+      positions in which they were provided, rather than reordering them to 
+      save a little space.
+    - A flaw in the handling of YUV colours with very high or low Y values
+      has been rectified.
+    - Removal of some unnecessary files / elements that complicate 
+      portability.
+
 REQUIREMENTS:
 	Pngnq depends on the libpng and libz libraries.
 	You will need libpng >=1.2.8 installed. 
@@ -47,4 +55,4 @@ REQUIREMENTS:
 Copyright (c) Stuart Coyle 2004-2009 stuart.coyle@gmail.com
 Copyright (c) Adrian Pellas-Rice and others.
 
-See LICENCE for details of copyrights held on this program.
+Consult all sources for details of copyrights held on this program.

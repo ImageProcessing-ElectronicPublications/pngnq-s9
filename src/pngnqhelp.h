@@ -244,15 +244,15 @@ Options:\n\
     colours.\n\
     \n\
     [-P PALETTE-FILENAME] User-Supplied Palette, Strict RGBA\n\
-      Uses the named palette, and keeps the exact RGBA values of the palette\n\
-      colours in the output image.  (The palette colours are still gamma\n\
+      Uses the named palette, and keeps the exact RGBA values and ordering of\n\
+      the palette colours in the output image. (Palette colours are still gamma\n\
       corrected internally, but the procedure is perfectly reversed prior to\n\
       writing output.)\n\
 \n\
     [-p PALETTE-FILENAME] User-Supplied Palette, Nudge-able\n\
       Uses the named palette, as described above, except that this time pngnq's\n\
       internal processing (mainly gamma correction) is allowed to nudge the\n\
-      palette colours.\n\
+      palette colours and reorder them.\n\
 \n\
 \n\
     Gamma\n\
