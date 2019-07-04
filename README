@@ -1,0 +1,50 @@
+PNGNQ-S9 - PNG NEUQUANT WITH SAIKI 9 MODIFICATIONS
+VERSION 2.0
+
+NOTES:
+
+pngnq-s9 is derived from pngnq, and incorporates various changes and feature
+additions made by Adrian Pellas-Rice.  It is a separately maintained project,
+please direct all enquiries specific to pngnq-s9 to XXX only.
+
+pngnq is a tool for quantizing PNG images in RGBA format.  Pngnq is an
+adaptation by Stuart Coyle and later Kornel Lesiński of Greg Roelf's pnqquant
+program using Anthony Dekker's neuquant algorithm.
+
+Stuarts Preface:
+    Pngnq exists because I needed a lot of png images in RGBA format to be
+    quantized. After some searching, the only tool I could find that worked was
+    pngquant. I tried pngquant but found that the median cut algorithm that it
+    uses, with or without dithering, gave inferior looking results to the
+    neuquant algorithm. You can see the difference demonstrated on the neuquant
+    web page:  
+    http://members.ozemail.com.au/~dekker/NEUQUANT.HTML.
+
+    The program was written to fulfill the specific needs of the small project
+    I was working on, and as such does not have all the functionality one could
+    want.
+
+    I use Greg Roelf's png reading and writing code unchanged for the most
+    part.  The pngnq source code includes neuquant32, which is an extension of
+    Anthony Dekker's neuquant, to make it handle 4 channels of pixel data.
+
+Kornel's Preface:
+    Major rewrite by Kornel Lesiński, adding double precision, dithering,
+    better handling of alpha transparency and more. Thanks!
+
+Saiki 9 Preface:
+    Adrian's modifications to pngnq added a large number of new command line
+    options and involved a 75% rewrite of neuquant32.c.  These changes are
+    summarised in pngnq-s9.odt.
+
+REQUIREMENTS:
+	Pngnq depends on the libpng and libz libraries.
+	You will need libpng >=1.2.8 installed. 
+	If you have this then you will have libz. 
+    On windows you will require the libpng13.dll 
+	which can be downloaded from several sites.
+
+Copyright (c) Stuart Coyle 2004-2009 stuart.coyle@gmail.com
+Copyright (c) Adrian Pellas-Rice and others.
+
+See LICENCE for details of copyrights held on this program.

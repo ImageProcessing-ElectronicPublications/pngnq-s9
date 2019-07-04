@@ -1,0 +1,23 @@
+September 19, 2012:  
+    pngnq-s9-2.0.1: Two small changes to allow compilation on Cygwin:
+    src/Makefile.am changed so it no longer links to a specific version of
+    libpng; #include "zlib.h" added to rwpng.c so it doesn't have to rely on
+    other header files to do this.
+
+August 2012: pngnq-s9-2.0 released as alpha.  Substantial modification of pngnq.
+
+17th June 2011 Version 1.1 Released
+
+Bugfixes:
+
+Fixed -d option so that it gives the correct directory now.
+
+Removed spurious error message when -Qf option was given.
+
+Include unistd.h for getopt, will use the bundled freegetopt if getopt is no available.
+
+Can now overwrite files in place.
+
+Fix for images with mainly one color being quantized with a low number of colors so that
+they now should have the correct transparent areas.
+

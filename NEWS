@@ -1,0 +1,9 @@
+PNGNQ-S9 Release Notes
+2.0 - Alpha release, maintained as a separate project to pngnq.
+
+PNGNQ Release Notes
+
+1.0 - Added PorneL's improvements.
+      These include dithering, gamma correction.
+      Checked with pngsuite images.
+      Cleaned up error reporting a bit.

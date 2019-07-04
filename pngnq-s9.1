@@ -1,0 +1,280 @@
+.\" Generated with the assitance of help2man 1.40.4.
+.TH PNGNQ-S9 "1" "August 2012" "pngnq-s9 2.0" "User Commands"
+.SH NAME
+pngnq-s9 \- Quantize a PNG image to 256 or fewer colours using the Neuquant
+procedure.
+.SH SYNOPSIS
+.B pngnq
+\fIOPTIONS INPUT-FILES\fR
+.SH DESCRTPTION
+.LP
+pngnq-s9 uses a neural network to choose the best combination of 256
+colours for each input file, and then redraws the input file using
+only those colours and writes the result as its output file.
+.LP
+The output file name is the input file base name with a new extension
+appended, "\-nq8.png" by default.
+.LP
+If no input files are provided, input is read from stdin, and output
+is written to stdout.
+.LP
+pngnq does not copy the structure of the original png file.
+The output
+file will always be indexed, and will not necessarily contain the same
+gamma, background colour or 'comment' information as the original.
+
+.SH OPTIONS
+
+.SS Help and Information
+
+.TP
+[\-H] prints this help message.
+.TP
+[\-h] prints a shorter help message.
+.TP
+[\-V] prints version information, including library versions.
+.TP
+[\-v] prints verbose status messages.
+
+.SS
+Basic Settings
+
+.TP
+[\-n NUMBER] Number of Colours
+The number of colours the quantized image is to
+contain, from 1 to 256 (default).  Example: \fB\-n64\fR for 64 colours.
+.TP
+[\-s NUMBER] Sample Rate
+Tell pngnq to sample one in how many pixels from the input image.
+Example: \fB\-s3\fR samples one third of the image.
+1 = slow, high quality; 10 = fast, lower quality.
+
+.SS
+File Settings
+.TP
+[\-d DIRECTORY] Output Directory
+Stipulates which directory the output files should be written to.
+Normally each output file stays in the same directory as the file it
+was derived from.  Example: \fB\-d\fR ./results
+.TP
+[\-e EXTENSION] Output File Extension
+Specifies the new extension for quantized files.
+Example: If your input file is myfile.png, with \fB\-e\fR_LOW.png the output
+file will be myfile_LOW.png. Defaults to -nq8.png
+.TP
+[\-f] Force Overwrite
+Forces pngnq to overwrite existing files.
+It is not recommended to overwrite an input file while it is in use.
+
+.SS
+Palettes
+.LP
+The user can optionally supply a palette of fixed colours to be used in the
+output image.  The palette should be provided in the form of a png image
+that for each palette entry has exactly one pixel of that colour.  If \fB\-n\fR
+requests more colours than there are colours in the palette, then pngnq
+will freely select remaining colours as usual.  Only the colours that are
+actually needed will be present in the output image, so using \fB\-n\fR 240 with
+a 240 colour palette may result in an output file that uses only 150
+colours.
+.TP
+[\-P PALETTE\-FILENAME] User\-Supplied Palette, Strict RGBA
+Uses the named palette, and keeps the exact RGBA values of the palette colours
+in the output image.  (The palette colours are still gamma corrected
+internally, but the procedure is perfectly reversed prior to writing
+output.)
+.TP
+[\-p PALETTE\-FILENAME] User\-Supplied Palette, Nudge\-able
+Uses the named palette, as described above, except that this time pngnq's
+internal processing (mainly gamma correction) is allowed to nudge the
+palette colours.
+
+.SS
+Gamma
+.LP
+pngnq uses gamma correction to help it choose and remap colours more
+intelligently.  The gamma value can be specified in three ways:
+.IP 1)
+Using \fB\-g\fR or \fB\-G\fR, in which case the same gamma value is used for all
+files.
+.IP 2)
+In the absence of \fB\-g\fR or \fB\-G\fR, if a supplied file contains an explicit
+gamma value (png gAMA), that value will be used for that file only.
+.IP 3)
+In the absence of the above, we assume a gamma value of 1.8.
+.LP
+To force gamma correction like a typical monitor, for example, you would
+use \fB\-g2.2\fR.
+.LP
+pngnq will not record the gamma value in the output file unless you use
+\fB\-G\fR and provide your own explicit gamma setting.
+.TP
+[\-g NUMBER] Gamma Correction Value, Unrecorded
+Force the use of the supplied gamma correction value, (but don't record
+it in the output file).  Example: \fB\-g2.2\fR (monitor gamma).
+Values in the range [0.1, 10] are accepted.
+.TP
+[\-G NUMBER] Gamma Correction Value, Recorded
+Force the use of the supplied gamma value, and record it in the output
+file in a png gAMA chunk.  Example: \fB\-G1.0\fR (no gamma, recorded).
+Values in the range [0.1, 10] are accepted.
+
+.SS
+Transparency
+.TP
+[\-t NUMBER] Transparency Extenuation
+\fB\-t\fR tries harder to keep alpha values of 255 and 0 exactly accurate in the output by using
+transparency extenuation when the quantized colour palette is first selected.
+Example: \fB\-t8\fR.  
+In general, 0 = none, 8 = some, 15 = a lot.  Defaults to zero.
+.TP
+[\-T NUMBER] Transparency Extenuation with Strict Remapping
+\fB\-T\fR works the same way as \fB\-t\fR when the colour palette is initially selected.  But it then also tries to force alpha values of 255 and 0 to be
+strictly retained in the output, even if that means making an otherwise poor substitution - opaque red for opaque blue, for example.  \fB\-T\fR will warn
+when forcing fails.
+.TP
+[\-A] Alpha Heuristic Off
+Turn off the alpha colour importance heuristic. This heuristic improves
+images with semi\-transparent areas, but can harm mostly grey images
+with a lot of transparency.
+
+.SS
+Colour Selection
+.TP
+[\-C LETTER] Colour Space
+Selects the colour space used for internal processing (both colour
+selection and remapping).  Use \fB\-Cr\fR for RGBA (default), or \fB\-Cy\fR for YUVA.
+Note that pngnq's default YUVA settings effectively allocate 8 bits of
+precision to each component \- to alter the relative importance of Y, U,
+V and A, use the sensitivity commands.
+.TP
+[\-u NUMBER] Un\-isolate
+Un\-isolates distinct but rarely used colours by the given factor.
+Use \fB\-u\fR when you notice small, important patches of colour going missing in
+the output image. Values in the range [0.0, 100.0] are accepted.
+7.0 = a little, 15.0 = some, 31.0 = a lot.  High values can result in
+degenerate output. When \fB\-u\fR is needed, try \fB\-u15.0\fR first, and work from
+there.  Defaults to zero (no effect).
+.TP
+[\-x NUMBER] Exclusion Threshold
+Try to choose colours that differ by at least this amount in at least one
+component. \fB\-x4.25\fR will choose colours about 4 steps apart, so RGBA
+(10,10,10,10) and (15,10,10,10) could both be chosen, but not
+(14,10,10,10) as well.  Values in the range [0.0, 32.0] are accpeted.
+Defaults to 0.5.  Use \fB\-x\fR to push colours apart when you notice pngnq
+is choosing too many similar colours.
+.TP
+[\-Q LETTER] Dither Mode
+Selects either Floyd\-Steinberg dithering (\fB\-Qf\fR) or no dithering (\fB\-Qn\fR),
+the default.  \fB\-Qf\fR results in a default dithering extent equivalent to
+\fB\-Q5\fR, as described below.
+.IP
+pngnq tends to choose colours that result in less dithering than
+traditional quantizers.  When quantizing to a large number of
+colours this is usually a good thing, resulting in subtle dithering and
+smoother output.  However, when quantizing to very few colours intense
+dithering may be the best option, in which case pngnq's performance may
+be poor.
+.TP
+[\-Q NUMBER] Dither Mode and Persistence
+Turns on Floyd\-Steinberg dithering \fBand\fR specifies its persistence.
+Persistence values are integers in the range [1,10], \fB\-Q1\fR dithers with
+minimal peristence, \fB\-Q10\fR with the maximum.  See above for more notes
+about dithering.
+.TP
+[\-L] Low Colour Mode
+Shorthand used to apply various settings suited to quantizing richly
+coloured images to under 40 colours. \fB\-L\fR overrides and can be overridden
+by other options, so the position of \fB\-L\fR on the command line is
+significant.  Equivalent to \fB\-s\fR1 \fB\-C\fRy \fB\-g\fR1.0 \fB\-u\fR15 \fB\-x\fR3.125 \fB\-Q\fR5 \fB\-0\fR 0.5 \fB\-a\fR 0.5 \fB\-R\fR \fB\-0\fR 0.75 \fB\-a\fR 0.75.
+Not advised for images with soft chromatic variation.
+
+.SS
+Sensitivity
+.LP
+pngnq allows the individual components of the internal colour space to be
+given less weight, or less sensitivity, in calculations.  If you need to
+show fine\-grained variations in blue, for example, you could desensitise
+red, green and alpha to achieve this.
+.LP
+Valid sensitivity values range from 0.0625 (one\-sixteenth sensitivity, much
+less accurate) to 1.0 (full sensitivity).
+.LP
+Normally the same sensitivity settings are used during colour selection and
+input image remapping.  However it is possible to change the settings for
+remapping only using \fB\-R\fR.
+.TP
+[\-0 NUMBER] Sensitivity Reduction Factor for Red or Y
+Sets the sensitivity for component zero, (R in RGB, Y in YUV).
+Example: \fB\-0\fR 0.25 for one quarter the usual sensitivity.
+.TP
+[\-1 NUMBER] Sensitivity Reduction Factor for Green or U
+Sets the sensitivity for component one, (G in RGB, U in YUV).
+Example: \fB\-1\fR 0.5 for half the usual sensitivity.
+.TP
+[\-2 NUMBER] Sensitivity Reduction Factor for Blue or V
+Sets the sensitivity for component two, (B in RGB, V in YUV).
+Example: \fB\-2\fR 1.0 for full sensitivity.
+.TP
+[\-a NUMBER] Sensitivity Reduction Factor for Alpha
+Sets the sensitivity for alpha.
+Example: \fB\-a\fR 0.0625 for minimal sensitivity.
+.TP
+[\-R] Restrict Remaining Sensitivity Flags to Remapping
+Causes all following sensitivity flags (\fB\-0\fR \fB\-1\fR \fB\-2\fR \fB\-a\fR) to only apply to the
+remapping phase of processing, not the colour selection phase.  Before
+\fB\-R\fR, or when \fB\-R\fR is not present, the sensitivity flags apply to both colour
+selection and remapping.  To choose colours with little regard to Y
+\&'luminance', but then pay full attention to Y when remapping, you would
+use: \fB\-0\fR 0.0625 \fB\-R\fR \fB\-0\fR 1.0
+
+.SH
+EXAMPLES
+.LP
+Quantize mypicture.png down to 256 colours and save result as
+mypicture\-nq8.png:
+.IP
+pngnq mypicture.png
+.LP
+Quantize mypicture.png using 100 colours and processing internally using
+the YUV colour space:
+.IP
+pngnq \fB\-Cy\fR \fB\-n100\fR mypicture.png
+.LP
+Quantize mypicture.png with reduced sensitivity to alpha, but paying more
+attention to distinct yet infrequent colours.  Write the result to
+mypicture_new.png:
+.IP
+pngnq \fB\-e\fR"_new.png" \fB\-a0.5\fR \fB\-u8.0\fR mypicture.png
+.LP
+Select quantization colours for mypicture.png with blue (\fB\-2\fR) and alpha
+(\fB\-a\fR) at 30% (0.3) sensitivity, but then remap (recolour) the input image
+with blue and alpha at full sensitivity:
+.IP
+pngnq \fB\-2\fR 0.3 \fB\-a\fR 0.3 \fB\-R\fR \fB\-2\fR 1.0 \fB\-a\fR 1.0 mypicture.png
+.LP
+Quantize mypicture.png using only the 48 colours in mypalette.png.
+Retain
+the exact RGBA values from the palette:
+.IP
+pngnq \fB\-n48\fR \fB\-P\fR mypalette.png mypicture.png
+.LP
+Quantize mypicture.png using the 30 colours in mypalette.png plus 20 more
+chosen by the the program. Sample every input pixel for extra accuracy.
+Don't necessarily retain the exact palette RGBA values if gamma or
+sensitivity reduction alters them:
+.IP
+pngnq \fB\-s1\fR \fB\-n50\fR \fB\-p\fR mypalette.png mypicture.png
+
+.SH
+RETURNS
+.LP
+Zero on success, EXIT_FAILURE for some errors affecting all input, or the number of input files affected by individual errors.
+
+.SH
+NOTES
+.LP
+pngnq-s9 is used at your own risk, and carries no warranties whatsoever.
+pngnq-s9 may make arbitrary assumptions in order to recover from errors such as quantization parameters being out of range or file names being too long.
+
+

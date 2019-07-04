@@ -1,0 +1,43 @@
+INSTALLATION INSTRUCTIONS:
+
+This should work on most UNIX style systems:
+
+tar -xzvf pngnq-s9-2.0.tar.gz
+cd pngnq-s9-2.0
+./configure
+make
+sudo make install
+
+If you are using gcc on a modern x86 system, you may get much better
+performance if you configure with:
+
+    ./configure CFLAGS="-O3 -msse -funroll-loops"
+
+instead.  
+
+Similar flags (to enable floating point SIMD operations and to enable loop
+unrolling) will probably be worthwhile on other compilers/architectures,
+assuming those optimizations aren't performed by default.
+
+
+NOTES:
+There may be warnings about strings being too long. Unless you have a really
+ancient compiler these can be safely ignored.  Also, you should get the
+following warning from gcc: "ISO C forbids casts to union type".  This is
+because we use an early, somewhat hacky version of GCC's vector data types.
+The correct way to fix this is for us to eventually switch to using the
+improved syntax in more recent versions of GCC.  If you really don't like
+warnings add --std=c99 to the CFLAGS or get rid of --pedantic.
+
+If you successfully build this on a system other than those listed below please
+tell me. Also tell me if it does not work. 
+
+* Ubuntu 12.04, gcc, x86-64 (Intel).
+* Ubuntu 10.04, gcc, x86 (AMD).
+
+
+
+Adrian
+
+apr-apr-apr@users.sourceforge.net
+
